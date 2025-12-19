@@ -43,7 +43,6 @@ const ManualForm: React.FC<ManualFormProps> = ({ onSubmit }) => {
     if (validate()) {
       onSubmit(formData);
       setFormData(INITIAL_FORM_STATE);
-      alert("Data berhasil ditambahkan ke antrean!");
     }
   };
 
@@ -60,13 +59,13 @@ const ManualForm: React.FC<ManualFormProps> = ({ onSubmit }) => {
               <select
                 value={formData[field.id]}
                 onChange={(e) => handleChange(field.id, e.target.value)}
-                className={`w-full px-3 py-2 bg-slate-50 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all ${
+                className={`w-full px-3 py-2 bg-slate-50 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all text-black font-medium ${
                   errors[field.id] ? 'border-red-400 ring-1 ring-red-400' : 'border-slate-300'
                 }`}
               >
-                <option value="">{field.placeholder}</option>
+                <option value="" className="text-slate-400">{field.placeholder}</option>
                 {field.options?.map(opt => (
-                  <option key={opt} value={opt}>{opt}</option>
+                  <option key={opt} value={opt} className="text-black">{opt}</option>
                 ))}
               </select>
             ) : (
@@ -75,7 +74,7 @@ const ManualForm: React.FC<ManualFormProps> = ({ onSubmit }) => {
                 value={formData[field.id]}
                 onChange={(e) => handleChange(field.id, e.target.value)}
                 placeholder={field.placeholder}
-                className={`w-full px-3 py-2 bg-slate-50 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all ${
+                className={`w-full px-3 py-2 bg-slate-50 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all text-black font-medium placeholder:text-slate-400 ${
                   errors[field.id] ? 'border-red-400 ring-1 ring-red-400' : 'border-slate-300'
                 }`}
               />

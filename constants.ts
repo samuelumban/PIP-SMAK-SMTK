@@ -1,6 +1,8 @@
 
 import { FormField } from './types';
 
+export const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzQwnYfU3GocQS5NEkNAvE_2HZv2G4im8y5TT3zJ6C5WkVdGqorLCS5CZxkQxQyaWBG7w/exec";
+
 export const PIP_FIELDS: FormField[] = [
   { 
     id: 'nik', 
