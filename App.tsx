@@ -12,6 +12,8 @@ const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'manual' | 'upload'>('manual');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: 'error' | 'success' | 'info' } | null>(null);
+  
   const [settings, setSettings] = useState<AppSettings>(() => {
     const saved = localStorage.getItem('pip_app_settings');
     return saved ? JSON.parse(saved) : { googleWebAppUrl: '' };
@@ -21,18 +23,31 @@ const App: React.FC = () => {
     localStorage.setItem('pip_app_settings', JSON.stringify(settings));
   }, [settings]);
 
+  // Auto-hide toast after 3 seconds
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => setToast(null), 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [toast]);
+
+  const showToast = (message: string, type: 'error' | 'success' | 'info' = 'info') => {
+    setToast({ message, type });
+  };
+
   const addData = (newData: PIPData) => {
     setDataQueue(prev => [...prev, newData]);
+    showToast("Data berhasil ditambahkan ke antrean!", "success");
   };
 
   const addBulkData = async (newEntries: PIPData[]) => {
     try {
       const validated = await geminiService.validateAndCleanData(newEntries);
       setDataQueue(prev => [...prev, ...validated]);
-      alert(`${validated.length} data berhasil dimuat!`);
+      showToast(`${validated.length} data berhasil dimuat!`, "success");
     } catch (error) {
       setDataQueue(prev => [...prev, ...newEntries]);
-      alert("Data dimuat tanpa validasi AI.");
+      showToast("Data dimuat tanpa validasi AI.", "info");
     }
   };
 
@@ -43,17 +58,19 @@ const App: React.FC = () => {
   const clearQueue = () => {
     if (window.confirm("Hapus semua data dalam antrean?")) {
       setDataQueue([]);
+      showToast("Antrean telah dibersihkan.", "info");
     }
   };
 
   const handleSubmitToGoogle = async () => {
+    // User-friendly check for empty queue
     if (dataQueue.length === 0) {
-      alert("Belum ada data yang ditambahkan ke antrean. Silakan isi form manual atau unggah file Excel terlebih dahulu sebelum mengirim.");
+      showToast("Antrean masih kosong. Silakan isi form manual atau unggah file Excel terlebih dahulu.", "error");
       return;
     }
 
     if (!settings.googleWebAppUrl) {
-      alert("Harap atur URL tujuan di menu Pengaturan (ikon gear) terlebih dahulu.");
+      showToast("URL Spreadsheet belum diatur. Klik ikon gerak di pojok kanan atas.", "error");
       setIsSettingsOpen(true);
       return;
     }
@@ -67,34 +84,20 @@ const App: React.FC = () => {
         body: JSON.stringify(dataQueue)
       });
 
-      alert("Data sedang dikirim ke database! Silakan periksa spreadsheet Anda.");
+      showToast("Data berhasil dikirim! Silakan cek Google Spreadsheet Anda.", "success");
       setDataQueue([]);
     } catch (error) {
       console.error("Submission error:", error);
-      alert("Gagal mengirim data. Periksa koneksi dan URL tujuan.");
+      showToast("Gagal mengirim data. Periksa koneksi internet Anda.", "error");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Sesuaikan urutan kolom sesuai permintaan pengguna (NIK, NISN, Nama, dst)
   const tableColumnOrder: (keyof PIPData)[] = [
-    'nik',
-    'nisn',
-    'namaLengkap',
-    'tempatTanggalLahir',
-    'nikIbu',
-    'namaIbu',
-    'emis',
-    'npsn',
-    'namaSekolah',
-    'kabKota',
-    'provinsi',
-    'bank',
-    'noRekening',
-    'namaRekening',
-    'nominal',
-    'tahunPenerimaan'
+    'nik', 'nisn', 'namaLengkap', 'tempatTanggalLahir', 'nikIbu', 'namaIbu',
+    'emis', 'npsn', 'namaSekolah', 'kabKota', 'provinsi', 'bank',
+    'noRekening', 'namaRekening', 'nominal', 'tahunPenerimaan'
   ];
 
   const getFieldLabel = (id: keyof PIPData) => {
@@ -113,14 +116,46 @@ const App: React.FC = () => {
       ]
     ];
     
-    const wb = (window as any).XLSX.utils.book_new();
-    const ws = (window as any).XLSX.utils.aoa_to_sheet(sampleData);
-    (window as any).XLSX.utils.book_append_sheet(wb, ws, "Template_PIP");
-    (window as any).XLSX.writeFile(wb, "Template_Data_PIP_SMAK_SMTK.xlsx");
+    try {
+      const wb = (window as any).XLSX.utils.book_new();
+      const ws = (window as any).XLSX.utils.aoa_to_sheet(sampleData);
+      (window as any).XLSX.utils.book_append_sheet(wb, ws, "Template_PIP");
+      (window as any).XLSX.writeFile(wb, "Template_Data_PIP_SMAK_SMTK.xlsx");
+      showToast("Template berhasil diunduh!", "success");
+    } catch (e) {
+      showToast("Gagal mengunduh template.", "error");
+    }
   };
 
   return (
     <div className="min-h-screen pb-24">
+      {/* Toast Notification */}
+      {toast && (
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[100] animate-in fade-in slide-in-from-top-4 duration-300">
+          <div className={`px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-4 text-sm font-bold border min-w-[320px] ${
+            toast.type === 'error' ? 'bg-red-50 border-red-200 text-red-800' : 
+            toast.type === 'success' ? 'bg-green-50 border-green-200 text-green-800' : 
+            'bg-blue-50 border-blue-200 text-blue-800'
+          }`}>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+              toast.type === 'error' ? 'bg-red-200' : 
+              toast.type === 'success' ? 'bg-green-200' : 
+              'bg-blue-200'
+            }`}>
+              <i className={`fa-solid ${
+                toast.type === 'error' ? 'fa-circle-exclamation' : 
+                toast.type === 'success' ? 'fa-check' : 
+                'fa-info'
+              }`}></i>
+            </div>
+            <div className="flex-1">{toast.message}</div>
+            <button onClick={() => setToast(null)} className="opacity-50 hover:opacity-100">
+              <i className="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <header className="bg-blue-800 text-white shadow-lg sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
@@ -142,11 +177,6 @@ const App: React.FC = () => {
             >
               <i className="fa-solid fa-gear text-lg"></i>
             </button>
-            <div className="hidden md:block h-6 w-px bg-blue-600 mx-2"></div>
-            <div className="hidden md:flex flex-col items-end">
-                <span className="text-xs font-medium">Satuan Pendidikan Keagamaan</span>
-                <span className="text-[10px] opacity-75 leading-none">Status: Terverifikasi</span>
-            </div>
           </div>
         </div>
       </header>
@@ -170,13 +200,13 @@ const App: React.FC = () => {
                 className={`px-6 py-4 bg-green-500 hover:bg-green-600 text-white font-bold rounded-xl shadow-lg transition-all flex items-center justify-center gap-3 ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 {isSubmitting ? (
-                  <i className="fa-solid fa-spinner fa-spin"></i>
+                  <i className="fa-solid fa-spinner fa-spin text-xl"></i>
                 ) : (
                   <i className="fa-solid fa-cloud-arrow-up text-xl"></i>
                 )}
-                <div>
+                <div className="text-left">
                   <div className="text-sm">Kirim Ke Spreadsheet</div>
-                  <div className="text-[10px] opacity-80 font-normal">Selesai Input? Kirim Sekarang</div>
+                  <div className="text-[10px] opacity-80 font-normal">Kirim {dataQueue.length} data sekarang</div>
                 </div>
               </button>
             </div>
@@ -221,7 +251,7 @@ const App: React.FC = () => {
                 <i className="fa-solid fa-circle-info"></i>
                 Ketentuan Validasi Ketat
               </h3>
-              <ul className="text-xs text-amber-900 space-y-3">
+              <ul className="text-xs text-amber-900 space-y-3 leading-relaxed">
                 <li className="flex gap-2">
                   <span className="font-bold">1.</span>
                   <span>NIK & NIK Ibu wajib 16 digit angka.</span>
@@ -234,10 +264,6 @@ const App: React.FC = () => {
                   <span className="font-bold text-red-600">3.</span>
                   <span className="font-bold text-red-600">Nominal, Rekening, & EMIS wajib Angka saja.</span>
                 </li>
-                <li className="flex gap-2">
-                  <span className="font-bold">4.</span>
-                  <span>Huruf, spasi, atau simbol pada kolom angka akan ditolak sistem.</span>
-                </li>
               </ul>
             </div>
 
@@ -247,12 +273,12 @@ const App: React.FC = () => {
                 <i className="fa-solid fa-file-arrow-down"></i>
                 Template Excel
               </h3>
-              <p className="text-xs text-blue-900 mb-4 leading-relaxed">
-                Gunakan template Excel resmi kami untuk mempermudah proses pengisian data dalam jumlah banyak dan memastikan format sesuai dengan sistem.
+              <p className="text-xs text-blue-900 mb-4 leading-relaxed italic">
+                Sangat disarankan mengunduh template ini jika Anda memiliki banyak data. Pengisian akan jauh lebih cepat.
               </p>
               <button 
                 onClick={downloadTemplate}
-                className="w-full bg-blue-600 text-white text-xs font-bold py-3 rounded-lg hover:bg-blue-700 transition-all shadow-md shadow-blue-100 flex items-center justify-center gap-2"
+                className="w-full bg-blue-600 text-white text-xs font-bold py-3 rounded-lg hover:bg-blue-700 transition-all shadow-md flex items-center justify-center gap-2"
               >
                 <i className="fa-solid fa-download"></i>
                 Download Template Excel
@@ -266,18 +292,16 @@ const App: React.FC = () => {
           <section className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="p-6 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center bg-slate-50 gap-4">
               <div>
-                <h3 className="font-bold text-slate-800">Review Data SMAK/SMTK</h3>
-                <p className="text-xs text-slate-500">Daftar siswa dalam antrean pengiriman database</p>
+                <h3 className="font-bold text-slate-800">Review Data SMAK/SMTK ({dataQueue.length})</h3>
+                <p className="text-xs text-slate-500">Silakan periksa kembali sebelum dikirim ke database pusat.</p>
               </div>
-              <div className="flex gap-3 w-full sm:w-auto">
-                <button 
-                  onClick={clearQueue}
-                  className="flex-1 sm:flex-none px-4 py-2 text-red-600 text-sm font-bold hover:bg-red-50 rounded-lg transition-colors border border-transparent hover:border-red-100"
-                >
-                  <i className="fa-solid fa-trash-can mr-2"></i>
-                  Hapus Semua
-                </button>
-              </div>
+              <button 
+                onClick={clearQueue}
+                className="px-4 py-2 text-red-600 text-xs font-bold hover:bg-red-50 rounded-lg transition-colors border border-red-100"
+              >
+                <i className="fa-solid fa-trash-can mr-2"></i>
+                Hapus Semua
+              </button>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm whitespace-nowrap">
@@ -297,7 +321,6 @@ const App: React.FC = () => {
                         <button 
                           onClick={() => removeData(idx)}
                           className="w-8 h-8 flex items-center justify-center text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-full transition-all"
-                          title="Hapus baris ini"
                         >
                           <i className="fa-solid fa-circle-xmark"></i>
                         </button>
@@ -305,7 +328,7 @@ const App: React.FC = () => {
                       <td className="px-6 py-3 text-slate-500 font-mono text-xs">{idx + 1}</td>
                       {tableColumnOrder.map(colId => (
                         <td key={colId} className={`px-6 py-3 text-slate-700 ${!item[colId] ? 'bg-red-50' : ''}`}>
-                          {item[colId] || <span className="text-red-500 italic font-bold">WAJIB ISI</span>}
+                          {item[colId] || <span className="text-red-500 italic font-bold">BELUM TERISI</span>}
                         </td>
                       ))}
                     </tr>
@@ -320,7 +343,10 @@ const App: React.FC = () => {
       <SettingsModal 
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
-        onSave={(url) => setSettings({ googleWebAppUrl: url })}
+        onSave={(url) => {
+          setSettings({ googleWebAppUrl: url });
+          showToast("Konfigurasi integrasi disimpan.", "success");
+        }}
         currentUrl={settings.googleWebAppUrl}
       />
 
@@ -328,13 +354,13 @@ const App: React.FC = () => {
       <footer className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md border-t border-slate-200 py-3 px-4 z-40">
         <div className="max-w-7xl mx-auto flex justify-between items-center text-[10px] text-slate-400 font-bold uppercase tracking-widest">
             <div className="flex items-center gap-4">
-                <span>© 2024 PIP SMAK/SMTK</span>
+                <span>© 2024-2025 PIP SMAK/SMTK</span>
                 <span className="hidden sm:block h-3 w-px bg-slate-200"></span>
                 <span className="hidden sm:block text-slate-500">Satuan Pendidikan Keagamaan Kristen</span>
             </div>
             <div className="flex items-center gap-2">
                 <span className={`w-2 h-2 rounded-full ${settings.googleWebAppUrl ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></span>
-                <span className="text-slate-600">{settings.googleWebAppUrl ? 'Terhubung Ke Spreadsheet' : 'Koneksi Spreadsheet Belum Aktif'}</span>
+                <span className="text-slate-600">{settings.googleWebAppUrl ? 'Spreadsheet Terkoneksi' : 'Koneksi Spreadsheet Belum Aktif'}</span>
             </div>
         </div>
       </footer>
