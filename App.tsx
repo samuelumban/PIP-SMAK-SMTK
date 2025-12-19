@@ -47,14 +47,14 @@ const App: React.FC = () => {
   };
 
   const handleSubmitToGoogle = async () => {
-    if (!settings.googleWebAppUrl) {
-      alert("Harap atur URL tujuan di menu Pengaturan (ikon gear) terlebih dahulu.");
-      setIsSettingsOpen(true);
+    if (dataQueue.length === 0) {
+      alert("Belum ada data yang ditambahkan ke antrean. Silakan isi form manual atau unggah file Excel terlebih dahulu sebelum mengirim.");
       return;
     }
 
-    if (dataQueue.length === 0) {
-      alert("Antrean kosong.");
+    if (!settings.googleWebAppUrl) {
+      alert("Harap atur URL tujuan di menu Pengaturan (ikon gear) terlebih dahulu.");
+      setIsSettingsOpen(true);
       return;
     }
 
@@ -77,18 +77,16 @@ const App: React.FC = () => {
     }
   };
 
-  // Define custom column order for the Review Table
+  // Sesuaikan urutan kolom sesuai permintaan pengguna (NIK, NISN, Nama, dst)
   const tableColumnOrder: (keyof PIPData)[] = [
-    'namaLengkap',
-    'tempatTanggalLahir',
     'nik',
     'nisn',
-    'jenisKelamin',
+    'namaLengkap',
+    'tempatTanggalLahir',
     'nikIbu',
     'namaIbu',
     'emis',
     'npsn',
-    'jenisSekolah',
     'namaSekolah',
     'kabKota',
     'provinsi',
@@ -108,17 +106,16 @@ const App: React.FC = () => {
     const sampleData = [
       headers,
       [
-        "Budi Santoso", "Jakarta, 12-05-2008", "3171012345678901", "0081234567", 
-        "Laki-laki", "3171012345678902", "Siti Aminah", "121232010001", 
-        "20123456", "SMAK", "SMAK Kristen Jakarta", "Jakarta Pusat", 
-        "DKI Jakarta", "BRI", "012345678910", "Budi Santoso", "1000000", "2024"
+        "3171012345678901", "0081234567", "Budi Santoso", "Jakarta, 12-05-2008", 
+        "3171012345678902", "Siti Aminah", "121232010001", "20123456", 
+        "SMAK Kristen Jakarta", "Jakarta Pusat", "DKI Jakarta", "BRI", 
+        "012345678910", "Budi Santoso", "1000000", "2024"
       ]
     ];
     
     const wb = (window as any).XLSX.utils.book_new();
     const ws = (window as any).XLSX.utils.aoa_to_sheet(sampleData);
     (window as any).XLSX.utils.book_append_sheet(wb, ws, "Template_PIP");
-    // Perbaikan: writeFile berada langsung di bawah XLSX, bukan XLSX.utils
     (window as any).XLSX.writeFile(wb, "Template_Data_PIP_SMAK_SMTK.xlsx");
   };
 
@@ -162,11 +159,26 @@ const App: React.FC = () => {
               <h2 className="text-3xl font-bold mb-2 uppercase">Pengumpulan Data Siswa</h2>
               <p className="opacity-90">Sistem manajemen data penerima PIP khusus untuk SMAK dan SMTK. Pastikan data akurat sesuai dokumen resmi sekolah.</p>
             </div>
-            <div className="mt-6 md:mt-0 flex gap-4">
+            <div className="mt-6 md:mt-0 flex flex-col sm:flex-row gap-4">
               <div className="bg-white/10 backdrop-blur-md p-4 rounded-xl text-center border border-white/20 min-w-[120px]">
                 <div className="text-2xl font-bold">{dataQueue.length}</div>
                 <div className="text-[10px] uppercase font-bold opacity-75">Data Antrean</div>
               </div>
+              <button 
+                onClick={handleSubmitToGoogle}
+                disabled={isSubmitting}
+                className={`px-6 py-4 bg-green-500 hover:bg-green-600 text-white font-bold rounded-xl shadow-lg transition-all flex items-center justify-center gap-3 ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
+              >
+                {isSubmitting ? (
+                  <i className="fa-solid fa-spinner fa-spin"></i>
+                ) : (
+                  <i className="fa-solid fa-cloud-arrow-up text-xl"></i>
+                )}
+                <div>
+                  <div className="text-sm">Kirim Ke Spreadsheet</div>
+                  <div className="text-[10px] opacity-80 font-normal">Selesai Input? Kirim Sekarang</div>
+                </div>
+              </button>
             </div>
           </div>
         </section>
@@ -249,7 +261,7 @@ const App: React.FC = () => {
           </div>
         </div>
 
-        {/* Preview Table & Global Submit Button */}
+        {/* Preview Table */}
         {dataQueue.length > 0 && (
           <section className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="p-6 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center bg-slate-50 gap-4">
@@ -264,18 +276,6 @@ const App: React.FC = () => {
                 >
                   <i className="fa-solid fa-trash-can mr-2"></i>
                   Hapus Semua
-                </button>
-                <button 
-                  onClick={handleSubmitToGoogle}
-                  disabled={isSubmitting}
-                  className={`flex-1 sm:flex-none px-6 py-2 bg-green-600 text-white text-sm font-bold rounded-lg shadow-lg shadow-green-100 hover:bg-green-700 transition-all flex items-center justify-center gap-2 ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
-                >
-                  {isSubmitting ? (
-                    <i className="fa-solid fa-spinner fa-spin"></i>
-                  ) : (
-                    <i className="fa-solid fa-cloud-arrow-up"></i>
-                  )}
-                  {isSubmitting ? 'Mengirim...' : 'Kirim Ke Spreadsheet'}
                 </button>
               </div>
             </div>
