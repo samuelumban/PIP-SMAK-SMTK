@@ -1,0 +1,5 @@
+{
+  "name": "PIP SMAK/SMTK",
+  "description": "Sistem Informasi Penerima PIP untuk Satuan Pendidikan Keagamaan Kristen (SMAK/SMTK) dengan fitur input manual, unggah Excel, dan integrasi Google Sheets.",
+  "requestFramePermissions": []
+}
