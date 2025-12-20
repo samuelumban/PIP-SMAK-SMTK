@@ -10,7 +10,10 @@ const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'manual' | 'upload'>('manual');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'error' | 'success' | 'info' } | null>(null);
-  const [isGuideOpen, setIsGuideOpen] = useState(false);
+  
+  // State untuk Inline Editing
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [editFormData, setEditFormData] = useState<PIPData | null>(null);
 
   useEffect(() => {
     if (toast) {
@@ -34,15 +37,38 @@ const App: React.FC = () => {
   };
 
   const removeData = (index: number) => {
+    if (editingIndex === index) {
+      setEditingIndex(null);
+      setEditFormData(null);
+    }
     setDataQueue(prev => prev.filter((_, i) => i !== index));
   };
 
-  const handleClearAll = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (window.confirm("Apakah Anda yakin ingin menghapus SEMUA data dalam antrean?")) {
-      setDataQueue([]);
-      showToast("Seluruh antrean telah dibersihkan.", "info");
+  // Fungsi Edit
+  const startEditing = (index: number, item: PIPData) => {
+    setEditingIndex(index);
+    setEditFormData({ ...item });
+  };
+
+  const cancelEditing = () => {
+    setEditingIndex(null);
+    setEditFormData(null);
+  };
+
+  const saveEdit = () => {
+    if (editingIndex !== null && editFormData) {
+      const newDataQueue = [...dataQueue];
+      newDataQueue[editingIndex] = editFormData;
+      setDataQueue(newDataQueue);
+      setEditingIndex(null);
+      setEditFormData(null);
+      showToast("Perubahan data disimpan.", "success");
+    }
+  };
+
+  const handleEditChange = (fieldId: keyof PIPData, value: string) => {
+    if (editFormData) {
+      setEditFormData({ ...editFormData, [fieldId]: value });
     }
   };
 
@@ -132,7 +158,7 @@ const App: React.FC = () => {
           <div className="md:flex justify-between items-center gap-8">
             <div className="md:max-w-2xl">
               <h2 className="text-3xl font-black mb-3 uppercase tracking-tight">Pengumpulan Data Siswa</h2>
-              <p className="opacity-80 text-sm leading-relaxed">Kumpulkan data penerima PIP Satuan Pendidikan Keagamaan Kristen secara kolektif. Data dapat diisi manual atau diunggah via Excel sebelum dikirim ke pusat.</p>
+              <p className="opacity-80 text-sm leading-relaxed">Kumpulkan data penerima PIP Satuan Pendidikan Keagamaan Kristen secara kolektif. Data dapat diperiksa dan diedit kembali sebelum dikirim ke pusat.</p>
             </div>
             <div className="mt-8 md:mt-0 flex flex-col sm:flex-row gap-4 shrink-0">
               <div className="bg-white/10 backdrop-blur-xl px-8 py-4 rounded-2xl text-center border border-white/20 shadow-inner">
@@ -187,7 +213,6 @@ const App: React.FC = () => {
                 <i className="fa-solid fa-file-excel"></i>
                 Template Resmi
               </h3>
-              <p className="text-[11px] text-blue-700/70 mb-5 leading-relaxed">Gunakan template ini untuk pengisian massal agar data terbaca dengan sempurna oleh sistem.</p>
               <button 
                 onClick={downloadTemplate}
                 className="w-full bg-white text-blue-700 text-xs font-black py-4 rounded-2xl hover:bg-blue-600 hover:text-white transition-all flex items-center justify-center gap-2 shadow-sm border border-blue-200"
@@ -200,37 +225,20 @@ const App: React.FC = () => {
             <div className="bg-white border border-slate-200 p-6 rounded-3xl shadow-sm">
               <h3 className="text-slate-800 font-black mb-4 text-xs uppercase tracking-widest flex items-center gap-2">
                 <i className="fa-solid fa-circle-info text-blue-600"></i>
-                Informasi
+                Petunjuk Tabel
               </h3>
-              <ul className="space-y-4">
-                <li className="flex gap-3">
-                  <div className="w-5 h-5 bg-blue-100 rounded-full flex items-center justify-center shrink-0 text-[10px] font-bold text-blue-600">1</div>
-                  <p className="text-[11px] text-slate-500 leading-tight">NIK & NISN divalidasi otomatis harus sesuai jumlah digit standar.</p>
-                </li>
-                <li className="flex gap-3">
-                  <div className="w-5 h-5 bg-blue-100 rounded-full flex items-center justify-center shrink-0 text-[10px] font-bold text-blue-600">2</div>
-                  <p className="text-[11px] text-slate-500 leading-tight">Pastikan Nominal hanya angka saja (Contoh: 750000).</p>
-                </li>
-              </ul>
+              <p className="text-[11px] text-slate-500 leading-relaxed">
+                Anda dapat mengedit data langsung pada tabel di bawah jika terdapat kesalahan pengetikan sebelum menekan tombol <strong>Kirim Data</strong>.
+              </p>
             </div>
           </div>
         </div>
 
         {dataQueue.length > 0 && (
           <section className="bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden animate-in zoom-in-95 duration-500">
-            <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-              <div>
-                <h3 className="font-black text-slate-800 uppercase tracking-tight">Review Antrean Data</h3>
-                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Total: {dataQueue.length} Siswa Terdaftar</p>
-              </div>
-              <button 
-                type="button"
-                onClick={handleClearAll}
-                className="text-xs font-black text-red-500 hover:text-white hover:bg-red-500 flex items-center gap-2 bg-red-50 px-5 py-2.5 rounded-xl border border-red-200 transition-all active:scale-95 uppercase tracking-tighter"
-              >
-                <i className="fa-solid fa-trash-can"></i>
-                Hapus Semua Antrean
-              </button>
+            <div className="p-6 border-b border-slate-100 bg-slate-50/50">
+              <h3 className="font-black text-slate-800 uppercase tracking-tight">Review Antrean Data</h3>
+              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Total: {dataQueue.length} Siswa Terdaftar</p>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-[11px] whitespace-nowrap">
@@ -244,24 +252,83 @@ const App: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {dataQueue.map((item, idx) => (
-                    <tr key={idx} className="hover:bg-blue-50/30 group transition-colors">
-                      <td className="px-5 py-4 sticky left-0 bg-white group-hover:bg-blue-50/30 z-10 border-r border-slate-100 text-center shadow-sm">
-                        <button 
-                          onClick={() => removeData(idx)}
-                          className="text-slate-300 hover:text-red-500 transition-all hover:scale-125"
-                        >
-                          <i className="fa-solid fa-circle-xmark text-lg"></i>
-                        </button>
-                      </td>
-                      <td className="px-5 py-4 text-slate-400 font-mono text-center font-bold">{idx + 1}</td>
-                      {tableColumnOrder.map(colId => (
-                        <td key={colId} className={`px-5 py-4 text-slate-800 font-bold ${!item[colId] ? 'bg-red-50/50' : ''}`}>
-                          {item[colId] || <span className="text-red-400 italic font-black">KOSONG</span>}
+                  {dataQueue.map((item, idx) => {
+                    const isEditing = editingIndex === idx;
+                    
+                    return (
+                      <tr key={idx} className={`group transition-colors ${isEditing ? 'bg-blue-50/50' : 'hover:bg-blue-50/30'}`}>
+                        <td className="px-5 py-4 sticky left-0 bg-white group-hover:bg-blue-50/30 z-10 border-r border-slate-100 text-center shadow-sm">
+                          <div className="flex items-center justify-center gap-3">
+                            {isEditing ? (
+                              <>
+                                <button 
+                                  onClick={saveEdit}
+                                  className="text-green-600 hover:scale-125 transition-all"
+                                  title="Simpan"
+                                >
+                                  <i className="fa-solid fa-circle-check text-lg"></i>
+                                </button>
+                                <button 
+                                  onClick={cancelEditing}
+                                  className="text-slate-400 hover:scale-125 transition-all"
+                                  title="Batal"
+                                >
+                                  <i className="fa-solid fa-circle-xmark text-lg"></i>
+                                </button>
+                              </>
+                            ) : (
+                              <>
+                                <button 
+                                  onClick={() => startEditing(idx, item)}
+                                  className="text-blue-500 hover:scale-125 transition-all"
+                                  title="Edit"
+                                >
+                                  <i className="fa-solid fa-pen-to-square text-lg"></i>
+                                </button>
+                                <button 
+                                  onClick={() => removeData(idx)}
+                                  className="text-slate-300 hover:text-red-500 transition-all hover:scale-125"
+                                  title="Hapus"
+                                >
+                                  <i className="fa-solid fa-trash text-lg"></i>
+                                </button>
+                              </>
+                            )}
+                          </div>
                         </td>
-                      ))}
-                    </tr>
-                  ))}
+                        <td className="px-5 py-4 text-slate-400 font-mono text-center font-bold">{idx + 1}</td>
+                        {tableColumnOrder.map(colId => {
+                          const fieldConfig = PIP_FIELDS.find(f => f.id === colId);
+                          
+                          return (
+                            <td key={colId} className={`px-5 py-4 text-slate-800 font-bold ${!item[colId] && !isEditing ? 'bg-red-50/50' : ''}`}>
+                              {isEditing && editFormData ? (
+                                fieldConfig?.type === 'select' ? (
+                                  <select 
+                                    value={editFormData[colId]}
+                                    onChange={(e) => handleEditChange(colId, e.target.value)}
+                                    className="bg-white border border-blue-200 rounded px-2 py-1 outline-none focus:ring-1 focus:ring-blue-500 min-w-[120px]"
+                                  >
+                                    <option value="">Pilih</option>
+                                    {fieldConfig.options?.map(o => <option key={o} value={o}>{o}</option>)}
+                                  </select>
+                                ) : (
+                                  <input 
+                                    type="text"
+                                    value={editFormData[colId]}
+                                    onChange={(e) => handleEditChange(colId, e.target.value)}
+                                    className="bg-white border border-blue-200 rounded px-2 py-1 outline-none focus:ring-1 focus:ring-blue-500 min-w-[120px]"
+                                  />
+                                )
+                              ) : (
+                                item[colId] || <span className="text-red-400 italic font-black">KOSONG</span>
+                              )}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
