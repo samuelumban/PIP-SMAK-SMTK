@@ -11,16 +11,23 @@ export class GeminiService {
 
   async validateAndCleanData(rawData: Partial<PIPData>[]): Promise<PIPData[]> {
     if (rawData.length === 0) return [];
-    const dataToProcess = rawData.slice(0, 5);
+
+    // Jika data sangat banyak (misal > 100 baris), kita lewati AI agar tidak kena limit token 
+    // dan memastikan semua data tetap masuk (reliability first)
+    if (rawData.length > 100) {
+      console.log("Data batch besar, melewati validasi AI untuk memastikan semua data masuk.");
+      return rawData as PIPData[];
+    }
 
     try {
       const response = await this.ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: `Review and structure the following school PIP data. Ensure all fields follow formal Indonesian naming conventions.
-        Ensure "jenisKelamin" is normalized to "Laki-laki" or "Perempuan".
-        Ensure "jenisSekolah" is normalized to "SMAK" or "SMTK".
-        Ensure "tahunPenerimaan" is either "2024" or "2025".
-        Data: ${JSON.stringify(dataToProcess)}`,
+        contents: `Review and structure the following school PIP data. 
+        - Ensure "jenisKelamin" is "Laki-laki" or "Perempuan".
+        - Ensure "jenisSekolah" is "SMAK" or "SMTK".
+        - Fix common typos in names or city names.
+        - Return the EXACT same number of items as provided in input.
+        Data: ${JSON.stringify(rawData)}`,
         config: {
           responseMimeType: "application/json",
           responseSchema: {
@@ -47,6 +54,7 @@ export class GeminiService {
                 nominal: { type: Type.STRING },
                 tahunPenerimaan: { type: Type.STRING },
               },
+              required: ["nik", "nisn", "namaLengkap"],
               propertyOrdering: [
                 "nik", "nisn", "namaLengkap", "jenisKelamin", "tempatTanggalLahir", "nikIbu", 
                 "namaIbu", "emis", "npsn", "jenisSekolah", "namaSekolah", "kabKota", 
@@ -58,7 +66,17 @@ export class GeminiService {
       });
 
       const text = response.text;
-      return text ? JSON.parse(text.trim()) : (rawData as PIPData[]);
+      if (!text) return rawData as PIPData[];
+      
+      const cleanedData = JSON.parse(text.trim());
+      
+      // Keamanan tambahan: Jika jumlah data dari AI berbeda dengan input, gunakan input asli
+      if (cleanedData.length !== rawData.length) {
+        console.warn("AI returned different count, using raw data");
+        return rawData as PIPData[];
+      }
+      
+      return cleanedData;
     } catch (error) {
       console.error("Gemini Validation Error:", error);
       return rawData as PIPData[];

@@ -4,6 +4,7 @@ import { PIPData } from './types';
 import { PIP_FIELDS, WEB_APP_URL } from './constants';
 import ManualForm from './components/ManualForm';
 import FileUpload from './components/FileUpload';
+import CodeModal from './components/CodeModal';
 import { geminiService } from './services/geminiService';
 
 const App: React.FC = () => {
@@ -11,6 +12,7 @@ const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'manual' | 'upload'>('manual');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'error' | 'success' | 'info' } | null>(null);
+  const [isCodeModalOpen, setIsCodeModalOpen] = useState(false);
 
   useEffect(() => {
     if (toast) {
@@ -30,7 +32,6 @@ const App: React.FC = () => {
 
   const addBulkData = async (newEntries: PIPData[]) => {
     try {
-      // Limit Gemini validation to first 5 items to prevent long waits
       const validated = await geminiService.validateAndCleanData(newEntries);
       setDataQueue(prev => [...prev, ...validated]);
       showToast(`${validated.length} data berhasil dimuat!`, "success");
@@ -76,9 +77,10 @@ const App: React.FC = () => {
     }
   };
 
+  // Urutan kolom disesuaikan dengan PIP_FIELDS (18 kolom total)
   const tableColumnOrder: (keyof PIPData)[] = [
-    'nik', 'nisn', 'namaLengkap', 'tempatTanggalLahir', 'nikIbu', 'namaIbu',
-    'emis', 'npsn', 'namaSekolah', 'kabKota', 'provinsi', 'bank',
+    'nik', 'nisn', 'namaLengkap', 'jenisKelamin', 'tempatTanggalLahir', 'nikIbu', 'namaIbu',
+    'emis', 'npsn', 'jenisSekolah', 'namaSekolah', 'kabKota', 'provinsi', 'bank',
     'noRekening', 'namaRekening', 'nominal', 'tahunPenerimaan'
   ];
 
@@ -88,29 +90,22 @@ const App: React.FC = () => {
 
   const downloadTemplate = () => {
     const headers = tableColumnOrder.map(id => getFieldLabel(id));
-    const sampleData = [
-      headers,
-      [
-        "3171012345678901", "0081234567", "Budi Santoso", "Laki-laki", "Jakarta, 12-05-2008", 
-        "3171012345678902", "Siti Aminah", "121232010001", "20123456", "SMAK",
-        "SMAK Kristen Jakarta", "Jakarta Pusat", "DKI Jakarta", "BRI", 
-        "012345678910", "Budi Santoso", "1000000", "2024"
-      ]
-    ];
+    // Hanya menyertakan header tanpa data sampel
+    const templateData = [headers];
     
     try {
       const wb = (window as any).XLSX.utils.book_new();
-      const ws = (window as any).XLSX.utils.aoa_to_sheet(sampleData);
+      const ws = (window as any).XLSX.utils.aoa_to_sheet(templateData);
       (window as any).XLSX.utils.book_append_sheet(wb, ws, "Template_PIP");
       (window as any).XLSX.writeFile(wb, "Template_Data_PIP_SMAK_SMTK.xlsx");
-      showToast("Template diunduh!", "success");
+      showToast("Template kosong berhasil diunduh!", "success");
     } catch (e) {
       showToast("Gagal mengunduh template.", "error");
     }
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-24 font-sans">
+    <div className="min-h-screen bg-slate-50 pb-24 font-sans text-black">
       {toast && (
         <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[100] animate-in">
           <div className={`px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 text-sm font-bold border ${
@@ -134,12 +129,16 @@ const App: React.FC = () => {
             <i className="fa-solid fa-graduation-cap text-2xl"></i>
             <div>
               <h1 className="text-lg font-bold leading-tight uppercase">PIP SMAK / SMTK</h1>
-              <p className="text-[10px] uppercase font-semibold opacity-70">Pendis Kristen</p>
+              <p className="text-[10px] uppercase font-semibold opacity-70 tracking-wider">Satuan Pendidikan Keagamaan Kristen</p>
             </div>
           </div>
-          <div className="text-[10px] bg-blue-700 px-3 py-1 rounded-full font-bold border border-blue-600">
-            DATABASE TERHUBUNG
-          </div>
+          <button 
+            onClick={() => setIsCodeModalOpen(true)}
+            className="flex items-center gap-2 bg-blue-700 hover:bg-blue-600 px-4 py-2 rounded-lg text-xs font-bold border border-blue-500 transition-all shadow-inner"
+          >
+            <i className="fa-solid fa-code"></i>
+            LIHAT KODE SUMBER
+          </button>
         </div>
       </header>
 
@@ -148,7 +147,7 @@ const App: React.FC = () => {
           <div className="md:flex justify-between items-center">
             <div className="md:max-w-2xl">
               <h2 className="text-3xl font-bold mb-2 uppercase tracking-tight">Pengumpulan Data Siswa</h2>
-              <p className="opacity-90">Input data penerima PIP secara akurat. Data yang Anda masukkan akan masuk ke antrean sementara sebelum dikirim ke Google Spreadsheet.</p>
+              <p className="opacity-90">Kumpulkan data penerima PIP Satuan Pendidikan Keagamaan Kristen (SMAK/SMTK) secara kolektif untuk dikirim ke Google Spreadsheet pusat.</p>
             </div>
             <div className="mt-6 md:mt-0 flex flex-col sm:flex-row gap-4 items-center">
               <div className="bg-white/10 backdrop-blur-md px-6 py-4 rounded-xl text-center border border-white/20 min-w-[120px]">
@@ -204,16 +203,16 @@ const App: React.FC = () => {
                 Penting
               </h3>
               <ul className="text-xs text-amber-900 space-y-3 leading-relaxed list-disc ml-4">
-                <li><strong>NIK & NISN</strong> harus sesuai dengan data kependudukan/sekolah.</li>
-                <li><strong>Nominal</strong> hanya angka saja tanpa tanda baca.</li>
-                <li>Gunakan Excel jika data siswa berjumlah banyak.</li>
+                <li><strong>NIK & NISN</strong> harus sesuai dengan data kependudukan.</li>
+                <li><strong>Nominal</strong> hanya angka saja tanpa tanda baca (misal: 1000000).</li>
+                <li>Gunakan template Excel resmi untuk pengisian massal.</li>
               </ul>
             </div>
 
             <div className="bg-blue-50 border border-blue-200 p-5 rounded-xl shadow-sm">
               <h3 className="text-blue-800 font-bold mb-3 text-sm flex items-center gap-2">
                 <i className="fa-solid fa-file-excel"></i>
-                Bantuan
+                Template
               </h3>
               <button 
                 onClick={downloadTemplate}
@@ -230,8 +229,8 @@ const App: React.FC = () => {
           <section className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden animate-in">
             <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
               <div>
-                <h3 className="font-bold text-slate-800">Review Antrean Data</h3>
-                <p className="text-xs text-slate-500">Berikut adalah data yang siap dikirim.</p>
+                <h3 className="font-bold text-slate-800">Review Antrean Data ({dataQueue.length})</h3>
+                <p className="text-xs text-slate-500">Berikut adalah data yang siap dikirim ke database pusat.</p>
               </div>
               <button 
                 onClick={clearQueue}
@@ -280,9 +279,14 @@ const App: React.FC = () => {
 
       <footer className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md border-t border-slate-200 py-4 px-4 text-center z-30">
         <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em]">
-            © 2024 Ditjen Bimas Kristen - Sistem Data PIP
+            © 2024 Ditjen Bimas Kristen - Satuan Pendidikan Keagamaan Kristen
         </p>
       </footer>
+
+      <CodeModal 
+        isOpen={isCodeModalOpen} 
+        onClose={() => setIsCodeModalOpen(false)} 
+      />
     </div>
   );
 };
