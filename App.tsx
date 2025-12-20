@@ -4,15 +4,12 @@ import { PIPData } from './types';
 import { PIP_FIELDS, WEB_APP_URL } from './constants';
 import ManualForm from './components/ManualForm';
 import FileUpload from './components/FileUpload';
-import CodeModal from './components/CodeModal';
-import { geminiService } from './services/geminiService';
 
 const App: React.FC = () => {
   const [dataQueue, setDataQueue] = useState<PIPData[]>([]);
   const [activeTab, setActiveTab] = useState<'manual' | 'upload'>('manual');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'error' | 'success' | 'info' } | null>(null);
-  const [isCodeModalOpen, setIsCodeModalOpen] = useState(false);
   const [isGuideOpen, setIsGuideOpen] = useState(false);
 
   useEffect(() => {
@@ -31,25 +28,20 @@ const App: React.FC = () => {
     showToast("Data berhasil ditambahkan ke antrean!", "success");
   };
 
-  const addBulkData = async (newEntries: PIPData[]) => {
-    try {
-      const validated = await geminiService.validateAndCleanData(newEntries);
-      setDataQueue(prev => [...prev, ...validated]);
-      showToast(`${validated.length} data berhasil dimuat!`, "success");
-    } catch (error) {
-      setDataQueue(prev => [...prev, ...newEntries]);
-      showToast("Data dimuat tanpa validasi AI.", "info");
-    }
+  const addBulkData = (newEntries: PIPData[]) => {
+    setDataQueue(prev => [...prev, ...newEntries]);
+    showToast(`${newEntries.length} data berhasil dimuat ke antrean!`, "success");
   };
 
   const removeData = (index: number) => {
     setDataQueue(prev => prev.filter((_, i) => i !== index));
   };
 
-  const clearQueue = () => {
-    if (window.confirm("Hapus semua data dalam antrean?")) {
+  const clearQueue = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (window.confirm("Apakah Anda yakin ingin menghapus SEMUA data dalam antrean? Tindakan ini tidak dapat dibatalkan.")) {
       setDataQueue([]);
-      showToast("Antrean telah dibersihkan.", "info");
+      showToast("Seluruh antrean telah dibersihkan.", "info");
     }
   };
 
@@ -158,7 +150,6 @@ const App: React.FC = () => {
           </div>
         </section>
 
-        {/* Panduan Alur Pengisian Massal (Collapsible) */}
         <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden transition-all">
           <button 
             onClick={() => setIsGuideOpen(!isGuideOpen)}
@@ -176,53 +167,34 @@ const App: React.FC = () => {
           {isGuideOpen && (
             <div className="px-6 pb-8 pt-2 animate-in fade-in slide-in-from-top-2">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 relative">
-                {/* Step 1 */}
                 <div className="flex flex-col items-center text-center p-4 bg-slate-50 rounded-xl border border-slate-100 relative group transition-all hover:bg-blue-50 hover:border-blue-100">
                   <div className="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold mb-3 shadow-md group-hover:scale-110 transition-transform">1</div>
                   <h4 className="text-[11px] font-bold text-slate-700 uppercase mb-1">Unduh Template</h4>
                   <p className="text-[10px] text-slate-500 leading-tight">Ambil format Excel resmi di menu sebelah kanan</p>
                 </div>
                 
-                {/* Step 2 */}
                 <div className="flex flex-col items-center text-center p-4 bg-slate-50 rounded-xl border border-slate-100 relative group transition-all hover:bg-blue-50 hover:border-blue-100">
                   <div className="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold mb-3 shadow-md group-hover:scale-110 transition-transform">2</div>
                   <h4 className="text-[11px] font-bold text-slate-700 uppercase mb-1">Isi Data Siswa</h4>
                   <p className="text-[10px] text-slate-500 leading-tight">Lengkapi semua kolom sesuai dokumen siswa</p>
                 </div>
 
-                {/* Step 3 */}
                 <div className="flex flex-col items-center text-center p-4 bg-slate-50 rounded-xl border border-slate-100 relative group transition-all hover:bg-blue-50 hover:border-blue-100">
                   <div className="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold mb-3 shadow-md group-hover:scale-110 transition-transform">3</div>
                   <h4 className="text-[11px] font-bold text-slate-700 uppercase mb-1">Unggah File</h4>
                   <p className="text-[10px] text-slate-500 leading-tight">Tarik file Excel ke area unggah yang tersedia</p>
                 </div>
 
-                {/* Step 4 */}
                 <div className="flex flex-col items-center text-center p-4 bg-slate-50 rounded-xl border border-slate-100 relative group transition-all hover:bg-blue-50 hover:border-blue-100">
                   <div className="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold mb-3 shadow-md group-hover:scale-110 transition-transform">4</div>
                   <h4 className="text-[11px] font-bold text-slate-700 uppercase mb-1">Cek Kevalidan</h4>
                   <p className="text-[10px] text-slate-500 leading-tight">Review data di tabel antrean (lihat kolom merah)</p>
                 </div>
 
-                {/* Step 5 */}
                 <div className="flex flex-col items-center text-center p-4 bg-slate-50 rounded-xl border border-slate-100 relative group transition-all hover:bg-blue-50 hover:border-blue-100">
                   <div className="w-10 h-10 bg-green-500 text-white rounded-full flex items-center justify-center font-bold mb-3 shadow-md group-hover:scale-110 transition-transform">5</div>
                   <h4 className="text-[11px] font-bold text-slate-700 uppercase mb-1">Kirim Database</h4>
                   <p className="text-[10px] text-slate-500 leading-tight">Klik tombol hijau untuk simpan permanen ke pusat</p>
-                </div>
-
-                {/* Arrows for Desktop */}
-                <div className="hidden lg:block absolute top-1/2 left-[18%] -translate-y-1/2 text-slate-300">
-                  <i className="fa-solid fa-chevron-right"></i>
-                </div>
-                <div className="hidden lg:block absolute top-1/2 left-[38%] -translate-y-1/2 text-slate-300">
-                  <i className="fa-solid fa-chevron-right"></i>
-                </div>
-                <div className="hidden lg:block absolute top-1/2 left-[58%] -translate-y-1/2 text-slate-300">
-                  <i className="fa-solid fa-chevron-right"></i>
-                </div>
-                <div className="hidden lg:block absolute top-1/2 left-[78%] -translate-y-1/2 text-slate-300">
-                  <i className="fa-solid fa-chevron-right"></i>
                 </div>
               </div>
             </div>
@@ -296,11 +268,12 @@ const App: React.FC = () => {
                 <p className="text-xs text-slate-500">Berikut adalah data yang siap dikirim ke database pusat.</p>
               </div>
               <button 
+                type="button"
                 onClick={clearQueue}
-                className="text-xs font-bold text-red-500 hover:text-red-700 flex items-center gap-1 bg-red-50 px-3 py-1.5 rounded-lg border border-red-100 transition-colors"
+                className="text-xs font-bold text-red-500 hover:text-white hover:bg-red-500 flex items-center gap-2 bg-red-50 px-4 py-2 rounded-lg border border-red-200 transition-all active:scale-95 shadow-sm"
               >
                 <i className="fa-solid fa-trash-can"></i>
-                Hapus Semua
+                Hapus Semua Antrean
               </button>
             </div>
             <div className="overflow-x-auto">
@@ -345,11 +318,6 @@ const App: React.FC = () => {
             © 2024 Ditjen Bimas Kristen - Satuan Pendidikan Keagamaan Kristen
         </p>
       </footer>
-
-      <CodeModal 
-        isOpen={isCodeModalOpen} 
-        onClose={() => setIsCodeModalOpen(false)} 
-      />
     </div>
   );
 };

@@ -1,0 +1,13 @@
+
+{
+  "version": 2,
+  "name": "pip-smak-smtk-app",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ],
+  "cleanUrls": true,
+  "trailingSlash": false
+}

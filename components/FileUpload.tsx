@@ -12,6 +12,20 @@ const FileUpload: React.FC<FileUploadProps> = ({ onDataLoaded }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
 
+  // Fungsi helper untuk merubah angka (termasuk scientific notation) menjadi string murni
+  const formatCellValue = (val: any): string => {
+    if (val === null || val === undefined) return "";
+    
+    // Jika tipe data adalah number, kita paksa ke string tanpa notasi ilmiah
+    if (typeof val === 'number') {
+      // Menggunakan toFixed(0) untuk angka bulat besar seperti NIK
+      // Jika angka sangat besar, toFixed(0) tetap memberikan representasi string lengkapnya
+      return val.toLocaleString('fullwide', { useGrouping: false });
+    }
+    
+    return String(val).trim();
+  };
+
   const processFile = (file: File) => {
     setIsProcessing(true);
     const reader = new FileReader();
@@ -19,12 +33,13 @@ const FileUpload: React.FC<FileUploadProps> = ({ onDataLoaded }) => {
     reader.onload = async (e) => {
       try {
         const data = e.target?.result;
-        const workbook = (window as any).XLSX.read(data, { type: 'binary' });
+        // Membaca workbook dengan cellNF (Number Format) true
+        const workbook = (window as any).XLSX.read(data, { type: 'binary', cellNF: true, cellText: true });
         const sheetName = workbook.SheetNames[0];
         const sheet = workbook.Sheets[sheetName];
         
-        // Menggunakan raw: false agar angka besar (NIK/Rekening) tidak berubah jadi scientific notation
-        const json = (window as any).XLSX.utils.sheet_to_json(sheet, { raw: false, defval: "" });
+        // Menggunakan raw: true agar kita bisa menangani angka sendiri dan menghindari pembulatan library
+        const json = (window as any).XLSX.utils.sheet_to_json(sheet, { raw: true, defval: "" });
 
         if (!json || json.length === 0) {
           throw new Error("File kosong atau tidak terbaca.");
@@ -32,7 +47,6 @@ const FileUpload: React.FC<FileUploadProps> = ({ onDataLoaded }) => {
 
         const mappedData: PIPData[] = json
           .filter((row: any) => {
-            // Filter baris yang benar-benar kosong (setidaknya harus ada NIK atau Nama)
             const values = Object.values(row).join("").trim();
             return values.length > 0;
           })
@@ -41,12 +55,9 @@ const FileUpload: React.FC<FileUploadProps> = ({ onDataLoaded }) => {
             const rowKeys = Object.keys(row);
 
             PIP_FIELDS.forEach((field) => {
-              // Algoritma pencocokan kolom yang lebih cerdas (case-insensitive & fuzzy)
               const key = rowKeys.find(k => {
                 const normalizedKey = k.toLowerCase().replace(/[^a-z0-9]/g, '');
                 const normalizedLabel = field.label.toLowerCase().replace(/[^a-z0-9]/g, '');
-                // Fix: field.id (keyof PIPData) includes 'number' because of the index signature. 
-                // We use String() to safely call toLowerCase().
                 const normalizedId = String(field.id).toLowerCase().replace(/[^a-z0-9]/g, '');
                 
                 return normalizedKey.includes(normalizedLabel) || 
@@ -54,11 +65,12 @@ const FileUpload: React.FC<FileUploadProps> = ({ onDataLoaded }) => {
                        normalizedKey === normalizedId;
               });
 
-              // Pastikan nilai dikonversi ke string dan dibersihkan dari spasi berlebih
-              let val = key ? String(row[key]).trim() : "";
+              // Ambil nilai mentah dan format agar tidak menjadi eksponen
+              let rawVal = key ? row[key] : "";
+              let val = formatCellValue(rawVal);
               
-              // Pembersihan khusus untuk NIK/NISN agar hanya angka
-              if (field.id === 'nik' || field.id === 'nisn' || field.id === 'noRekening') {
+              // Pembersihan khusus untuk kolom angka agar hanya berisi digit (menghapus tanda titik/koma ribuan jika ada)
+              if (field.id === 'nik' || field.id === 'nisn' || field.id === 'noRekening' || field.id === 'nikIbu' || field.id === 'nominal' || field.id === 'emis' || field.id === 'npsn') {
                 val = val.replace(/[^0-9]/g, '');
               }
 
@@ -130,11 +142,11 @@ const FileUpload: React.FC<FileUploadProps> = ({ onDataLoaded }) => {
       </div>
 
       {isProcessing && (
-        <div className="absolute inset-0 bg-rose-50/90 backdrop-blur-[2px] rounded-xl flex flex-col items-center justify-center z-10 animate-in">
-          <div className="w-16 h-16 border-4 border-rose-200 border-t-rose-500 rounded-full animate-spin mb-4"></div>
-          <h3 className="text-rose-600 font-bold text-lg">Memproses Seluruh Data...</h3>
-          <p className="text-rose-400 text-xs font-medium mt-1 text-center px-6">
-            Sistem sedang memetakan kolom dan memvalidasi baris Excel Anda. Mohon jangan tutup halaman ini.
+        <div className="absolute inset-0 bg-blue-50/90 backdrop-blur-[2px] rounded-xl flex flex-col items-center justify-center z-10 animate-in">
+          <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-500 rounded-full animate-spin mb-4"></div>
+          <h3 className="text-blue-600 font-bold text-lg">Memproses Seluruh Data...</h3>
+          <p className="text-blue-400 text-xs font-medium mt-1 text-center px-6">
+            Sistem sedang memetakan kolom dan memproses format angka. Mohon tunggu sebentar.
           </p>
         </div>
       )}
