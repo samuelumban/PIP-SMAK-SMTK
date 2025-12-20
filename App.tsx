@@ -28,12 +28,12 @@ const App: React.FC = () => {
 
   const addData = (newData: PIPData) => {
     setDataQueue(prev => [...prev, newData]);
-    showToast("Data berhasil ditambahkan ke antrean!", "success");
+    showToast("Data ditambahkan ke antrean!", "success");
   };
 
   const addBulkData = (newEntries: PIPData[]) => {
     setDataQueue(prev => [...prev, ...newEntries]);
-    showToast(`${newEntries.length} data berhasil dimuat ke antrean!`, "success");
+    showToast(`${newEntries.length} data dimuat ke antrean!`, "success");
   };
 
   const removeData = (index: number) => {
@@ -44,7 +44,7 @@ const App: React.FC = () => {
     setDataQueue(prev => prev.filter((_, i) => i !== index));
   };
 
-  // Fungsi Edit
+  // Logika Editing
   const startEditing = (index: number, item: PIPData) => {
     setEditingIndex(index);
     setEditFormData({ ...item });
@@ -66,6 +66,7 @@ const App: React.FC = () => {
     }
   };
 
+  // Fixed: Changed fieldId type to keyof PIPData to allow passing colId which is (keyof PIPData)
   const handleEditChange = (fieldId: keyof PIPData, value: string) => {
     if (editFormData) {
       setEditFormData({ ...editFormData, [fieldId]: value });
@@ -158,7 +159,7 @@ const App: React.FC = () => {
           <div className="md:flex justify-between items-center gap-8">
             <div className="md:max-w-2xl">
               <h2 className="text-3xl font-black mb-3 uppercase tracking-tight">Pengumpulan Data Siswa</h2>
-              <p className="opacity-80 text-sm leading-relaxed">Kumpulkan data penerima PIP Satuan Pendidikan Keagamaan Kristen secara kolektif. Data dapat diperiksa dan diedit kembali sebelum dikirim ke pusat.</p>
+              <p className="opacity-80 text-sm leading-relaxed">Kelola data penerima PIP secara kolektif. Anda dapat mengedit isian langsung pada tabel sebelum dikirim ke pusat.</p>
             </div>
             <div className="mt-8 md:mt-0 flex flex-col sm:flex-row gap-4 shrink-0">
               <div className="bg-white/10 backdrop-blur-xl px-8 py-4 rounded-2xl text-center border border-white/20 shadow-inner">
@@ -180,30 +181,16 @@ const App: React.FC = () => {
         <div className="flex flex-col lg:flex-row gap-8">
           <div className="flex-1 space-y-6">
             <div className="flex gap-2 bg-slate-200/50 p-1.5 rounded-2xl w-fit border border-slate-200">
-              <button 
-                onClick={() => setActiveTab('manual')}
-                className={`px-8 py-3 rounded-xl font-bold text-sm transition-all ${
-                  activeTab === 'manual' ? 'bg-white text-blue-800 shadow-md ring-1 ring-slate-200' : 'text-slate-500 hover:text-slate-800'
-                }`}
-              >
+              <button onClick={() => setActiveTab('manual')} className={`px-8 py-3 rounded-xl font-bold text-sm transition-all ${activeTab === 'manual' ? 'bg-white text-blue-800 shadow-md ring-1 ring-slate-200' : 'text-slate-500 hover:text-slate-800'}`}>
                 Input Manual
               </button>
-              <button 
-                onClick={() => setActiveTab('upload')}
-                className={`px-8 py-3 rounded-xl font-bold text-sm transition-all ${
-                  activeTab === 'upload' ? 'bg-white text-blue-800 shadow-md ring-1 ring-slate-200' : 'text-slate-500 hover:text-slate-800'
-                }`}
-              >
+              <button onClick={() => setActiveTab('upload')} className={`px-8 py-3 rounded-xl font-bold text-sm transition-all ${activeTab === 'upload' ? 'bg-white text-blue-800 shadow-md ring-1 ring-slate-200' : 'text-slate-500 hover:text-slate-800'}`}>
                 Unggah Excel
               </button>
             </div>
 
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-              {activeTab === 'manual' ? (
-                <ManualForm onSubmit={addData} />
-              ) : (
-                <FileUpload onDataLoaded={addBulkData} />
-              )}
+              {activeTab === 'manual' ? <ManualForm onSubmit={addData} /> : <FileUpload onDataLoaded={addBulkData} />}
             </div>
           </div>
 
@@ -211,24 +198,20 @@ const App: React.FC = () => {
             <div className="bg-blue-50 border border-blue-100 p-6 rounded-3xl shadow-sm">
               <h3 className="text-blue-900 font-black mb-4 text-xs uppercase tracking-widest flex items-center gap-2">
                 <i className="fa-solid fa-file-excel"></i>
-                Template Resmi
+                Template
               </h3>
-              <button 
-                onClick={downloadTemplate}
-                className="w-full bg-white text-blue-700 text-xs font-black py-4 rounded-2xl hover:bg-blue-600 hover:text-white transition-all flex items-center justify-center gap-2 shadow-sm border border-blue-200"
-              >
-                <i className="fa-solid fa-download"></i>
-                UNDUH TEMPLATE
+              <button onClick={downloadTemplate} className="w-full bg-white text-blue-700 text-xs font-black py-4 rounded-2xl hover:bg-blue-600 hover:text-white transition-all border border-blue-200 shadow-sm">
+                UNDUH TEMPLATE EXCEL
               </button>
             </div>
-
+            
             <div className="bg-white border border-slate-200 p-6 rounded-3xl shadow-sm">
-              <h3 className="text-slate-800 font-black mb-4 text-xs uppercase tracking-widest flex items-center gap-2">
-                <i className="fa-solid fa-circle-info text-blue-600"></i>
-                Petunjuk Tabel
+              <h3 className="text-slate-800 font-black mb-3 text-xs uppercase tracking-widest flex items-center gap-2">
+                <i className="fa-solid fa-pen-to-square text-blue-600"></i>
+                Edit Data
               </h3>
               <p className="text-[11px] text-slate-500 leading-relaxed">
-                Anda dapat mengedit data langsung pada tabel di bawah jika terdapat kesalahan pengetikan sebelum menekan tombol <strong>Kirim Data</strong>.
+                Klik ikon pensil di kolom aksi tabel untuk memperbaiki data yang salah ketik.
               </p>
             </div>
           </div>
@@ -238,7 +221,7 @@ const App: React.FC = () => {
           <section className="bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden animate-in zoom-in-95 duration-500">
             <div className="p-6 border-b border-slate-100 bg-slate-50/50">
               <h3 className="font-black text-slate-800 uppercase tracking-tight">Review Antrean Data</h3>
-              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Total: {dataQueue.length} Siswa Terdaftar</p>
+              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Total: {dataQueue.length} Siswa</p>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-[11px] whitespace-nowrap">
@@ -254,42 +237,25 @@ const App: React.FC = () => {
                 <tbody className="divide-y divide-slate-100">
                   {dataQueue.map((item, idx) => {
                     const isEditing = editingIndex === idx;
-                    
                     return (
-                      <tr key={idx} className={`group transition-colors ${isEditing ? 'bg-blue-50/50' : 'hover:bg-blue-50/30'}`}>
+                      <tr key={idx} className={`group transition-colors ${isEditing ? 'bg-blue-50/70' : 'hover:bg-blue-50/30'}`}>
                         <td className="px-5 py-4 sticky left-0 bg-white group-hover:bg-blue-50/30 z-10 border-r border-slate-100 text-center shadow-sm">
                           <div className="flex items-center justify-center gap-3">
                             {isEditing ? (
                               <>
-                                <button 
-                                  onClick={saveEdit}
-                                  className="text-green-600 hover:scale-125 transition-all"
-                                  title="Simpan"
-                                >
-                                  <i className="fa-solid fa-circle-check text-lg"></i>
+                                <button onClick={saveEdit} className="text-green-600 hover:scale-125 transition-all" title="Simpan">
+                                  <i className="fa-solid fa-circle-check text-xl"></i>
                                 </button>
-                                <button 
-                                  onClick={cancelEditing}
-                                  className="text-slate-400 hover:scale-125 transition-all"
-                                  title="Batal"
-                                >
-                                  <i className="fa-solid fa-circle-xmark text-lg"></i>
+                                <button onClick={cancelEditing} className="text-slate-400 hover:scale-125 transition-all" title="Batal">
+                                  <i className="fa-solid fa-circle-xmark text-xl"></i>
                                 </button>
                               </>
                             ) : (
                               <>
-                                <button 
-                                  onClick={() => startEditing(idx, item)}
-                                  className="text-blue-500 hover:scale-125 transition-all"
-                                  title="Edit"
-                                >
+                                <button onClick={() => startEditing(idx, item)} className="text-blue-500 hover:scale-125 transition-all" title="Edit">
                                   <i className="fa-solid fa-pen-to-square text-lg"></i>
                                 </button>
-                                <button 
-                                  onClick={() => removeData(idx)}
-                                  className="text-slate-300 hover:text-red-500 transition-all hover:scale-125"
-                                  title="Hapus"
-                                >
+                                <button onClick={() => removeData(idx)} className="text-slate-300 hover:text-red-500 transition-all hover:scale-125" title="Hapus">
                                   <i className="fa-solid fa-trash text-lg"></i>
                                 </button>
                               </>
@@ -298,26 +264,25 @@ const App: React.FC = () => {
                         </td>
                         <td className="px-5 py-4 text-slate-400 font-mono text-center font-bold">{idx + 1}</td>
                         {tableColumnOrder.map(colId => {
-                          const fieldConfig = PIP_FIELDS.find(f => f.id === colId);
-                          
+                          const fieldCfg = PIP_FIELDS.find(f => f.id === colId);
                           return (
                             <td key={colId} className={`px-5 py-4 text-slate-800 font-bold ${!item[colId] && !isEditing ? 'bg-red-50/50' : ''}`}>
                               {isEditing && editFormData ? (
-                                fieldConfig?.type === 'select' ? (
+                                fieldCfg?.type === 'select' ? (
                                   <select 
-                                    value={editFormData[colId]}
+                                    value={editFormData[colId]} 
                                     onChange={(e) => handleEditChange(colId, e.target.value)}
-                                    className="bg-white border border-blue-200 rounded px-2 py-1 outline-none focus:ring-1 focus:ring-blue-500 min-w-[120px]"
+                                    className="bg-white border border-blue-300 rounded px-2 py-1 outline-none min-w-[120px]"
                                   >
                                     <option value="">Pilih</option>
-                                    {fieldConfig.options?.map(o => <option key={o} value={o}>{o}</option>)}
+                                    {fieldCfg.options?.map(o => <option key={o} value={o}>{o}</option>)}
                                   </select>
                                 ) : (
                                   <input 
-                                    type="text"
-                                    value={editFormData[colId]}
+                                    type="text" 
+                                    value={editFormData[colId]} 
                                     onChange={(e) => handleEditChange(colId, e.target.value)}
-                                    className="bg-white border border-blue-200 rounded px-2 py-1 outline-none focus:ring-1 focus:ring-blue-500 min-w-[120px]"
+                                    className="bg-white border border-blue-300 rounded px-2 py-1 outline-none min-w-[120px] focus:ring-1 focus:ring-blue-500"
                                   />
                                 )
                               ) : (
