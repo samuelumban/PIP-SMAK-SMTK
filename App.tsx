@@ -37,9 +37,10 @@ const App: React.FC = () => {
     setDataQueue(prev => prev.filter((_, i) => i !== index));
   };
 
-  const clearQueue = (e: React.MouseEvent) => {
+  const handleClearAll = (e: React.MouseEvent) => {
     e.preventDefault();
-    if (window.confirm("Apakah Anda yakin ingin menghapus SEMUA data dalam antrean? Tindakan ini tidak dapat dibatalkan.")) {
+    e.stopPropagation();
+    if (window.confirm("Apakah Anda yakin ingin menghapus SEMUA data dalam antrean?")) {
       setDataQueue([]);
       showToast("Seluruh antrean telah dibersihkan.", "info");
     }
@@ -119,110 +120,59 @@ const App: React.FC = () => {
           <div className="flex items-center gap-3">
             <i className="fa-solid fa-graduation-cap text-2xl"></i>
             <div>
-              <h1 className="text-lg font-bold leading-tight uppercase">PIP SMAK / SMTK</h1>
-              <p className="text-[10px] uppercase font-semibold opacity-70 tracking-wider">Satuan Pendidikan Keagamaan Kristen</p>
+              <h1 className="text-lg font-bold leading-tight uppercase tracking-tight">PIP SMAK / SMTK</h1>
+              <p className="text-[10px] uppercase font-bold opacity-70 tracking-widest">Ditjen Bimas Kristen</p>
             </div>
           </div>
         </div>
       </header>
 
       <main className="max-w-7xl mx-auto px-4 mt-8 space-y-8">
-        <section className="bg-gradient-to-r from-blue-700 to-blue-900 rounded-2xl p-8 text-white shadow-xl">
-          <div className="md:flex justify-between items-center">
+        <section className="bg-gradient-to-br from-blue-700 to-blue-900 rounded-3xl p-8 text-white shadow-2xl border border-blue-600/50">
+          <div className="md:flex justify-between items-center gap-8">
             <div className="md:max-w-2xl">
-              <h2 className="text-3xl font-bold mb-2 uppercase tracking-tight">Pengumpulan Data Siswa</h2>
-              <p className="opacity-90">Kumpulkan data penerima PIP Satuan Pendidikan Keagamaan Kristen (SMAK/SMTK) secara kolektif untuk dikirim ke Google Spreadsheet pusat.</p>
+              <h2 className="text-3xl font-black mb-3 uppercase tracking-tight">Pengumpulan Data Siswa</h2>
+              <p className="opacity-80 text-sm leading-relaxed">Kumpulkan data penerima PIP Satuan Pendidikan Keagamaan Kristen secara kolektif. Data dapat diisi manual atau diunggah via Excel sebelum dikirim ke pusat.</p>
             </div>
-            <div className="mt-6 md:mt-0 flex flex-col sm:flex-row gap-4 items-center">
-              <div className="bg-white/10 backdrop-blur-md px-6 py-4 rounded-xl text-center border border-white/20 min-w-[120px]">
-                <div className="text-3xl font-bold">{dataQueue.length}</div>
-                <div className="text-[10px] uppercase font-bold opacity-75">Antrean</div>
+            <div className="mt-8 md:mt-0 flex flex-col sm:flex-row gap-4 shrink-0">
+              <div className="bg-white/10 backdrop-blur-xl px-8 py-4 rounded-2xl text-center border border-white/20 shadow-inner">
+                <div className="text-4xl font-black">{dataQueue.length}</div>
+                <div className="text-[10px] uppercase font-black opacity-60 tracking-tighter">Antrean Data</div>
               </div>
               <button 
                 onClick={handleSubmitToGoogle}
                 disabled={isSubmitting || dataQueue.length === 0}
-                className="px-8 py-4 bg-green-500 hover:bg-green-600 text-white font-bold rounded-xl shadow-lg transition-all flex items-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed group"
+                className="px-10 py-4 bg-green-500 hover:bg-green-600 text-white font-black rounded-2xl shadow-xl transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed group"
               >
                 {isSubmitting ? <i className="fa-solid fa-spinner fa-spin"></i> : <i className="fa-solid fa-cloud-arrow-up text-xl group-hover:scale-110 transition-transform"></i>}
-                Kirim Ke Database
+                KIRIM DATA
               </button>
             </div>
           </div>
         </section>
 
-        <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden transition-all">
-          <button 
-            onClick={() => setIsGuideOpen(!isGuideOpen)}
-            className="w-full p-5 flex justify-between items-center hover:bg-slate-50 transition-colors text-left"
-          >
-            <div className="flex items-center gap-2">
-              <i className="fa-solid fa-map-location-dot text-blue-600"></i>
-              <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wide">
-                Lihat Panduan Alur Pengumpulan Data Massal
-              </h3>
-            </div>
-            <i className={`fa-solid fa-chevron-down text-slate-400 transition-transform duration-300 ${isGuideOpen ? 'rotate-180' : ''}`}></i>
-          </button>
-          
-          {isGuideOpen && (
-            <div className="px-6 pb-8 pt-2 animate-in fade-in slide-in-from-top-2">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 relative">
-                <div className="flex flex-col items-center text-center p-4 bg-slate-50 rounded-xl border border-slate-100 relative group transition-all hover:bg-blue-50 hover:border-blue-100">
-                  <div className="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold mb-3 shadow-md group-hover:scale-110 transition-transform">1</div>
-                  <h4 className="text-[11px] font-bold text-slate-700 uppercase mb-1">Unduh Template</h4>
-                  <p className="text-[10px] text-slate-500 leading-tight">Ambil format Excel resmi di menu sebelah kanan</p>
-                </div>
-                
-                <div className="flex flex-col items-center text-center p-4 bg-slate-50 rounded-xl border border-slate-100 relative group transition-all hover:bg-blue-50 hover:border-blue-100">
-                  <div className="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold mb-3 shadow-md group-hover:scale-110 transition-transform">2</div>
-                  <h4 className="text-[11px] font-bold text-slate-700 uppercase mb-1">Isi Data Siswa</h4>
-                  <p className="text-[10px] text-slate-500 leading-tight">Lengkapi semua kolom sesuai dokumen siswa</p>
-                </div>
-
-                <div className="flex flex-col items-center text-center p-4 bg-slate-50 rounded-xl border border-slate-100 relative group transition-all hover:bg-blue-50 hover:border-blue-100">
-                  <div className="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold mb-3 shadow-md group-hover:scale-110 transition-transform">3</div>
-                  <h4 className="text-[11px] font-bold text-slate-700 uppercase mb-1">Unggah File</h4>
-                  <p className="text-[10px] text-slate-500 leading-tight">Tarik file Excel ke area unggah yang tersedia</p>
-                </div>
-
-                <div className="flex flex-col items-center text-center p-4 bg-slate-50 rounded-xl border border-slate-100 relative group transition-all hover:bg-blue-50 hover:border-blue-100">
-                  <div className="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold mb-3 shadow-md group-hover:scale-110 transition-transform">4</div>
-                  <h4 className="text-[11px] font-bold text-slate-700 uppercase mb-1">Cek Kevalidan</h4>
-                  <p className="text-[10px] text-slate-500 leading-tight">Review data di tabel antrean (lihat kolom merah)</p>
-                </div>
-
-                <div className="flex flex-col items-center text-center p-4 bg-slate-50 rounded-xl border border-slate-100 relative group transition-all hover:bg-blue-50 hover:border-blue-100">
-                  <div className="w-10 h-10 bg-green-500 text-white rounded-full flex items-center justify-center font-bold mb-3 shadow-md group-hover:scale-110 transition-transform">5</div>
-                  <h4 className="text-[11px] font-bold text-slate-700 uppercase mb-1">Kirim Database</h4>
-                  <p className="text-[10px] text-slate-500 leading-tight">Klik tombol hijau untuk simpan permanen ke pusat</p>
-                </div>
-              </div>
-            </div>
-          )}
-        </section>
-
         <div className="flex flex-col lg:flex-row gap-8">
           <div className="flex-1 space-y-6">
-            <div className="flex gap-1 bg-slate-200 p-1 rounded-xl w-fit">
+            <div className="flex gap-2 bg-slate-200/50 p-1.5 rounded-2xl w-fit border border-slate-200">
               <button 
                 onClick={() => setActiveTab('manual')}
-                className={`px-6 py-2 rounded-lg font-bold text-sm transition-all ${
-                  activeTab === 'manual' ? 'bg-white text-blue-800 shadow-sm' : 'text-slate-600 hover:text-slate-800'
+                className={`px-8 py-3 rounded-xl font-bold text-sm transition-all ${
+                  activeTab === 'manual' ? 'bg-white text-blue-800 shadow-md ring-1 ring-slate-200' : 'text-slate-500 hover:text-slate-800'
                 }`}
               >
                 Input Manual
               </button>
               <button 
                 onClick={() => setActiveTab('upload')}
-                className={`px-6 py-2 rounded-lg font-bold text-sm transition-all ${
-                  activeTab === 'upload' ? 'bg-white text-blue-800 shadow-sm' : 'text-slate-600 hover:text-slate-800'
+                className={`px-8 py-3 rounded-xl font-bold text-sm transition-all ${
+                  activeTab === 'upload' ? 'bg-white text-blue-800 shadow-md ring-1 ring-slate-200' : 'text-slate-500 hover:text-slate-800'
                 }`}
               >
                 Unggah Excel
               </button>
             </div>
 
-            <div className="animate-in">
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
               {activeTab === 'manual' ? (
                 <ManualForm onSubmit={addData} />
               ) : (
@@ -232,76 +182,82 @@ const App: React.FC = () => {
           </div>
 
           <div className="w-full lg:w-80 space-y-4">
-            <div className="bg-amber-50 border border-amber-200 p-5 rounded-xl shadow-sm">
-              <h3 className="text-amber-800 font-bold mb-3 text-sm flex items-center gap-2">
-                <i className="fa-solid fa-circle-info"></i>
-                Penting
-              </h3>
-              <ul className="text-xs text-amber-900 space-y-3 leading-relaxed list-disc ml-4">
-                <li><strong>NIK & NISN</strong> harus sesuai dengan data dokumen siswa.</li>
-                <li><strong>Nominal</strong> hanya angka saja tanpa tanda baca (misal: 1000000).</li>
-                <li>Gunakan template Excel resmi untuk pengisian massal.</li>
-              </ul>
-            </div>
-
-            <div className="bg-blue-50 border border-blue-200 p-5 rounded-xl shadow-sm">
-              <h3 className="text-blue-800 font-bold mb-3 text-sm flex items-center gap-2">
+            <div className="bg-blue-50 border border-blue-100 p-6 rounded-3xl shadow-sm">
+              <h3 className="text-blue-900 font-black mb-4 text-xs uppercase tracking-widest flex items-center gap-2">
                 <i className="fa-solid fa-file-excel"></i>
-                Template
+                Template Resmi
               </h3>
+              <p className="text-[11px] text-blue-700/70 mb-5 leading-relaxed">Gunakan template ini untuk pengisian massal agar data terbaca dengan sempurna oleh sistem.</p>
               <button 
                 onClick={downloadTemplate}
-                className="w-full bg-blue-600 text-white text-xs font-bold py-3 rounded-lg hover:bg-blue-700 transition-all flex items-center justify-center gap-2 shadow-sm"
+                className="w-full bg-white text-blue-700 text-xs font-black py-4 rounded-2xl hover:bg-blue-600 hover:text-white transition-all flex items-center justify-center gap-2 shadow-sm border border-blue-200"
               >
                 <i className="fa-solid fa-download"></i>
-                Unduh Template Excel
+                UNDUH TEMPLATE
               </button>
+            </div>
+
+            <div className="bg-white border border-slate-200 p-6 rounded-3xl shadow-sm">
+              <h3 className="text-slate-800 font-black mb-4 text-xs uppercase tracking-widest flex items-center gap-2">
+                <i className="fa-solid fa-circle-info text-blue-600"></i>
+                Informasi
+              </h3>
+              <ul className="space-y-4">
+                <li className="flex gap-3">
+                  <div className="w-5 h-5 bg-blue-100 rounded-full flex items-center justify-center shrink-0 text-[10px] font-bold text-blue-600">1</div>
+                  <p className="text-[11px] text-slate-500 leading-tight">NIK & NISN divalidasi otomatis harus sesuai jumlah digit standar.</p>
+                </li>
+                <li className="flex gap-3">
+                  <div className="w-5 h-5 bg-blue-100 rounded-full flex items-center justify-center shrink-0 text-[10px] font-bold text-blue-600">2</div>
+                  <p className="text-[11px] text-slate-500 leading-tight">Pastikan Nominal hanya angka saja (Contoh: 750000).</p>
+                </li>
+              </ul>
             </div>
           </div>
         </div>
 
         {dataQueue.length > 0 && (
-          <section className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden animate-in">
+          <section className="bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden animate-in zoom-in-95 duration-500">
             <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
               <div>
-                <h3 className="font-bold text-slate-800">Review Antrean Data ({dataQueue.length})</h3>
-                <p className="text-xs text-slate-500">Berikut adalah data yang siap dikirim ke database pusat.</p>
+                <h3 className="font-black text-slate-800 uppercase tracking-tight">Review Antrean Data</h3>
+                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Total: {dataQueue.length} Siswa Terdaftar</p>
               </div>
               <button 
                 type="button"
-                onClick={clearQueue}
-                className="text-xs font-bold text-red-500 hover:text-white hover:bg-red-500 flex items-center gap-2 bg-red-50 px-4 py-2 rounded-lg border border-red-200 transition-all active:scale-95 shadow-sm"
+                onClick={handleClearAll}
+                className="text-xs font-black text-red-500 hover:text-white hover:bg-red-500 flex items-center gap-2 bg-red-50 px-5 py-2.5 rounded-xl border border-red-200 transition-all active:scale-95 uppercase tracking-tighter"
               >
                 <i className="fa-solid fa-trash-can"></i>
                 Hapus Semua Antrean
               </button>
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs whitespace-nowrap">
-                <thead className="bg-slate-100 text-slate-500 uppercase font-bold">
+              <table className="w-full text-left text-[11px] whitespace-nowrap">
+                <thead className="bg-slate-100 text-slate-500 uppercase font-black tracking-tighter">
                   <tr>
-                    <th className="px-4 py-3 border-b sticky left-0 bg-slate-100 z-10 shadow-sm">Hapus</th>
-                    <th className="px-4 py-3 border-b text-center">No</th>
+                    <th className="px-5 py-4 border-b sticky left-0 bg-slate-100 z-10 text-center">Aksi</th>
+                    <th className="px-5 py-4 border-b text-center">No</th>
                     {tableColumnOrder.map(colId => (
-                      <th key={colId} className="px-4 py-3 border-b">{getFieldLabel(colId)}</th>
+                      <th key={colId} className="px-5 py-4 border-b">{getFieldLabel(colId)}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {dataQueue.map((item, idx) => (
-                    <tr key={idx} className="hover:bg-slate-50 group transition-colors">
-                      <td className="px-4 py-3 sticky left-0 bg-white group-hover:bg-slate-50 z-10 border-r border-slate-100 text-center">
+                    <tr key={idx} className="hover:bg-blue-50/30 group transition-colors">
+                      <td className="px-5 py-4 sticky left-0 bg-white group-hover:bg-blue-50/30 z-10 border-r border-slate-100 text-center shadow-sm">
                         <button 
                           onClick={() => removeData(idx)}
-                          className="text-slate-300 hover:text-red-500 transition-colors"
+                          className="text-slate-300 hover:text-red-500 transition-all hover:scale-125"
                         >
                           <i className="fa-solid fa-circle-xmark text-lg"></i>
                         </button>
                       </td>
-                      <td className="px-4 py-3 text-slate-400 font-mono text-center">{idx + 1}</td>
+                      <td className="px-5 py-4 text-slate-400 font-mono text-center font-bold">{idx + 1}</td>
                       {tableColumnOrder.map(colId => (
-                        <td key={colId} className={`px-4 py-3 text-black font-medium ${!item[colId] ? 'bg-red-50' : ''}`}>
-                          {item[colId] || <span className="text-red-400 italic">Kosong</span>}
+                        <td key={colId} className={`px-5 py-4 text-slate-800 font-bold ${!item[colId] ? 'bg-red-50/50' : ''}`}>
+                          {item[colId] || <span className="text-red-400 italic font-black">KOSONG</span>}
                         </td>
                       ))}
                     </tr>
@@ -313,9 +269,9 @@ const App: React.FC = () => {
         )}
       </main>
 
-      <footer className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md border-t border-slate-200 py-4 px-4 text-center z-30">
-        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em]">
-            © 2024 Ditjen Bimas Kristen - Satuan Pendidikan Keagamaan Kristen
+      <footer className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-xl border-t border-slate-200 py-4 px-4 text-center z-30 shadow-2xl">
+        <p className="text-[9px] text-slate-400 font-black uppercase tracking-[0.4em]">
+            © 2024 Ditjen Bimas Kristen • Satuan Pendidikan Keagamaan Kristen
         </p>
       </footer>
     </div>
