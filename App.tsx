@@ -13,6 +13,7 @@ const App: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'error' | 'success' | 'info' } | null>(null);
   const [isCodeModalOpen, setIsCodeModalOpen] = useState(false);
+  const [isGuideOpen, setIsGuideOpen] = useState(false);
 
   useEffect(() => {
     if (toast) {
@@ -77,7 +78,6 @@ const App: React.FC = () => {
     }
   };
 
-  // Urutan kolom disesuaikan dengan PIP_FIELDS (18 kolom total)
   const tableColumnOrder: (keyof PIPData)[] = [
     'nik', 'nisn', 'namaLengkap', 'jenisKelamin', 'tempatTanggalLahir', 'nikIbu', 'namaIbu',
     'emis', 'npsn', 'jenisSekolah', 'namaSekolah', 'kabKota', 'provinsi', 'bank',
@@ -90,7 +90,6 @@ const App: React.FC = () => {
 
   const downloadTemplate = () => {
     const headers = tableColumnOrder.map(id => getFieldLabel(id));
-    // Hanya menyertakan header tanpa data sampel
     const templateData = [headers];
     
     try {
@@ -132,13 +131,6 @@ const App: React.FC = () => {
               <p className="text-[10px] uppercase font-semibold opacity-70 tracking-wider">Satuan Pendidikan Keagamaan Kristen</p>
             </div>
           </div>
-          <button 
-            onClick={() => setIsCodeModalOpen(true)}
-            className="flex items-center gap-2 bg-blue-700 hover:bg-blue-600 px-4 py-2 rounded-lg text-xs font-bold border border-blue-500 transition-all shadow-inner"
-          >
-            <i className="fa-solid fa-code"></i>
-            LIHAT KODE SUMBER
-          </button>
         </div>
       </header>
 
@@ -164,6 +156,77 @@ const App: React.FC = () => {
               </button>
             </div>
           </div>
+        </section>
+
+        {/* Panduan Alur Pengisian Massal (Collapsible) */}
+        <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden transition-all">
+          <button 
+            onClick={() => setIsGuideOpen(!isGuideOpen)}
+            className="w-full p-5 flex justify-between items-center hover:bg-slate-50 transition-colors text-left"
+          >
+            <div className="flex items-center gap-2">
+              <i className="fa-solid fa-map-location-dot text-blue-600"></i>
+              <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wide">
+                Lihat Panduan Alur Pengumpulan Data Massal
+              </h3>
+            </div>
+            <i className={`fa-solid fa-chevron-down text-slate-400 transition-transform duration-300 ${isGuideOpen ? 'rotate-180' : ''}`}></i>
+          </button>
+          
+          {isGuideOpen && (
+            <div className="px-6 pb-8 pt-2 animate-in fade-in slide-in-from-top-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 relative">
+                {/* Step 1 */}
+                <div className="flex flex-col items-center text-center p-4 bg-slate-50 rounded-xl border border-slate-100 relative group transition-all hover:bg-blue-50 hover:border-blue-100">
+                  <div className="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold mb-3 shadow-md group-hover:scale-110 transition-transform">1</div>
+                  <h4 className="text-[11px] font-bold text-slate-700 uppercase mb-1">Unduh Template</h4>
+                  <p className="text-[10px] text-slate-500 leading-tight">Ambil format Excel resmi di menu sebelah kanan</p>
+                </div>
+                
+                {/* Step 2 */}
+                <div className="flex flex-col items-center text-center p-4 bg-slate-50 rounded-xl border border-slate-100 relative group transition-all hover:bg-blue-50 hover:border-blue-100">
+                  <div className="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold mb-3 shadow-md group-hover:scale-110 transition-transform">2</div>
+                  <h4 className="text-[11px] font-bold text-slate-700 uppercase mb-1">Isi Data Siswa</h4>
+                  <p className="text-[10px] text-slate-500 leading-tight">Lengkapi semua kolom sesuai dokumen siswa</p>
+                </div>
+
+                {/* Step 3 */}
+                <div className="flex flex-col items-center text-center p-4 bg-slate-50 rounded-xl border border-slate-100 relative group transition-all hover:bg-blue-50 hover:border-blue-100">
+                  <div className="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold mb-3 shadow-md group-hover:scale-110 transition-transform">3</div>
+                  <h4 className="text-[11px] font-bold text-slate-700 uppercase mb-1">Unggah File</h4>
+                  <p className="text-[10px] text-slate-500 leading-tight">Tarik file Excel ke area unggah yang tersedia</p>
+                </div>
+
+                {/* Step 4 */}
+                <div className="flex flex-col items-center text-center p-4 bg-slate-50 rounded-xl border border-slate-100 relative group transition-all hover:bg-blue-50 hover:border-blue-100">
+                  <div className="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold mb-3 shadow-md group-hover:scale-110 transition-transform">4</div>
+                  <h4 className="text-[11px] font-bold text-slate-700 uppercase mb-1">Cek Kevalidan</h4>
+                  <p className="text-[10px] text-slate-500 leading-tight">Review data di tabel antrean (lihat kolom merah)</p>
+                </div>
+
+                {/* Step 5 */}
+                <div className="flex flex-col items-center text-center p-4 bg-slate-50 rounded-xl border border-slate-100 relative group transition-all hover:bg-blue-50 hover:border-blue-100">
+                  <div className="w-10 h-10 bg-green-500 text-white rounded-full flex items-center justify-center font-bold mb-3 shadow-md group-hover:scale-110 transition-transform">5</div>
+                  <h4 className="text-[11px] font-bold text-slate-700 uppercase mb-1">Kirim Database</h4>
+                  <p className="text-[10px] text-slate-500 leading-tight">Klik tombol hijau untuk simpan permanen ke pusat</p>
+                </div>
+
+                {/* Arrows for Desktop */}
+                <div className="hidden lg:block absolute top-1/2 left-[18%] -translate-y-1/2 text-slate-300">
+                  <i className="fa-solid fa-chevron-right"></i>
+                </div>
+                <div className="hidden lg:block absolute top-1/2 left-[38%] -translate-y-1/2 text-slate-300">
+                  <i className="fa-solid fa-chevron-right"></i>
+                </div>
+                <div className="hidden lg:block absolute top-1/2 left-[58%] -translate-y-1/2 text-slate-300">
+                  <i className="fa-solid fa-chevron-right"></i>
+                </div>
+                <div className="hidden lg:block absolute top-1/2 left-[78%] -translate-y-1/2 text-slate-300">
+                  <i className="fa-solid fa-chevron-right"></i>
+                </div>
+              </div>
+            </div>
+          )}
         </section>
 
         <div className="flex flex-col lg:flex-row gap-8">
@@ -203,7 +266,7 @@ const App: React.FC = () => {
                 Penting
               </h3>
               <ul className="text-xs text-amber-900 space-y-3 leading-relaxed list-disc ml-4">
-                <li><strong>NIK & NISN</strong> harus sesuai dengan data kependudukan.</li>
+                <li><strong>NIK & NISN</strong> harus sesuai dengan data dokumen siswa.</li>
                 <li><strong>Nominal</strong> hanya angka saja tanpa tanda baca (misal: 1000000).</li>
                 <li>Gunakan template Excel resmi untuk pengisian massal.</li>
               </ul>
